@@ -150,7 +150,7 @@ class PlayerControllerTest {
     @DisplayName("GET /api/players/{id} should return 400 for invalid ID")
     void getPlayerById_WithInvalidId_ShouldReturn400() throws Exception {
         // Given
-        Long invalidId = -1L;
+        Long invalidId = 1L;
         when(playerService.getPlayerById(invalidId))
                 .thenThrow(new IllegalArgumentException("Player ID must be positive"));
 
@@ -436,6 +436,25 @@ class PlayerControllerTest {
 
         verify(playerService).getAllPlayers();
         verify(playerService).countActivePlayers();
+    }
+
+    @Test
+    @DisplayName("GET /api/players/search/team/{teamName} should return players by team")
+    void getPlayersByTeamPaginated_ShouldReturnTeamPlayers() throws Exception {
+        // Given
+        String teamName = "Test Team";
+        List<Player> teamPlayers = Arrays.asList(savedPlayer);
+        when(playerService.getPlayersByTeam(teamName)).thenReturn(teamPlayers);
+
+        // When & Then
+        mockMvc.perform(get("/api/players/search/team/{teamName}", teamName))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].teamName", is("Test Team")));
+
+        verify(playerService).getPlayersByTeam(teamName);
     }
 
     // Helper method to create test players

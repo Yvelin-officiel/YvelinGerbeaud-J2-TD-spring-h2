@@ -457,4 +457,70 @@ class PlayerServiceTest {
         assertEquals(0.0, result);
         verify(playerRepository).findByTeamName(teamName);
     }
+
+    @Test
+    @DisplayName("Should activate player successfully")
+    void activatePlayer_WithValidId_ShouldActivatePlayer() {
+        // Given
+        Long playerId = 1L;
+        savedPlayer.setActive(false); // Ensure player starts inactive
+        when(playerRepository.findById(playerId)).thenReturn(Optional.of(savedPlayer));
+        when(playerRepository.save(any(Player.class))).thenAnswer(invocation -> {
+            Player savedPlayer = invocation.getArgument(0);
+            assertTrue(savedPlayer.getActive(), "Player should be activated");
+            assertNotNull(savedPlayer.getUpdatedAt(), "UpdatedAt should be set");
+            return savedPlayer;
+        });
+
+        // When
+        Player result = playerService.activatePlayer(playerId);
+
+        // Then
+        assertNotNull(result);
+        assertTrue(result.getActive(), "Player should be active");
+        verify(playerRepository).findById(playerId);
+        verify(playerRepository).save(any(Player.class));
+    }
+
+    @Test
+    @DisplayName("Should throw exception when activating non-existent player")
+    void activatePlayer_WithNonExistentId_ShouldThrowException() {
+        // Given
+        Long playerId = 999L;
+        when(playerRepository.findById(playerId)).thenReturn(Optional.empty());
+
+        // When & Then
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> playerService.activatePlayer(playerId)
+        );
+
+        assertEquals("Player not found with ID: 999", exception.getMessage());
+        verify(playerRepository).findById(playerId);
+        verify(playerRepository, never()).save(any(Player.class));
+    }
+
+    @Test
+    @DisplayName("Should activate already activated player successfully")
+    void activatePlayer_alreadyActive_ShouldActivatePlayer() {
+        // Given
+        Long playerId = 1L;
+        savedPlayer.setActive(true); // Ensure player starts active
+        when(playerRepository.findById(playerId)).thenReturn(Optional.of(savedPlayer));
+        when(playerRepository.save(any(Player.class))).thenAnswer(invocation -> {
+            Player savedPlayer = invocation.getArgument(0);
+            assertTrue(savedPlayer.getActive(), "Player should be activated");
+            assertNotNull(savedPlayer.getUpdatedAt(), "UpdatedAt should be set");
+            return savedPlayer;
+        });
+
+        // When
+        Player result = playerService.activatePlayer(playerId);
+
+        // Then
+        assertNotNull(result);
+        assertTrue(result.getActive(), "Player should be active");
+        verify(playerRepository).findById(playerId);
+        verify(playerRepository).save(any(Player.class));
+    }
 }
